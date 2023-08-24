@@ -411,21 +411,25 @@
 # if __name__ == "__main__":
 #     run()
 
-from sympy import Symbol, pi, sin, Number, Eq, And
+from sympy import Symbol, pi, sin, Number, Eq
+from sympy.logic.boolalg import Or
 
 import modulus
-from modulus.hydra import instantiate_arch, ModulusConfig
+from modulus.hydra import to_absolute_path, instantiate_arch, ModulusConfig
+from modulus.utils.io import csv_to_dict
 from modulus.solver import Solver
 from modulus.domain import Domain
-from modulus.geometry.primitives_3d import Box
+from modulus.geometry.primitives_2d import Rectangle
 from modulus.domain.constraint import (
     PointwiseBoundaryConstraint,
     PointwiseInteriorConstraint,
 )
+from modulus.domain.validator import PointwiseValidator
 from modulus.domain.inferencer import PointwiseInferencer
-from modulus.utils.io.plotter import InferencerPlotter
+from modulus.utils.io.plotter import ValidatorPlotter, InferencerPlotter
 from modulus.key import Key
-from modulus.eq.pdes.electromagnetic import PEC, SommerfeldBC, MaxwellFreqReal
+from modulus.eq.pdes.wave_equation import HelmholtzEquation
+from modulus.eq.pdes.navier_stokes import GradNormal
 #from modulus.eq.boundary_conditions import BlochBoundaryCondition, RadiantBoundaryCondition
 
 
