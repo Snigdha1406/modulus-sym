@@ -171,7 +171,7 @@ if __name__ == "__main__":
  #   run()
     
     # start solver
-    epoch_losses = []
+   # epoch_losses = []
   #  for epoch in range(cfg.train.epochs):
    #     slv.train()
     #    loss = slv.eval()
