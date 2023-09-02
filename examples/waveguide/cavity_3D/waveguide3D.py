@@ -147,8 +147,16 @@ def run(cfg: ModulusConfig) -> None:
 
     # make solver
     slv = Solver(cfg, waveguide_domain)
+    
 
     # start solver
+    # start solver
+    slv.solve()
+
+
+if __name__ == "__main__":
+    run()
+    
     # start solver
     epoch_losses = []
     for epoch in range(cfg.train.epochs):
@@ -169,8 +177,7 @@ def run(cfg: ModulusConfig) -> None:
    # plt.title("Epoch Loss Curve")
   #  plt.savefig("epoch_loss_curve.png")
  #   plt.show
-    slv.solve()
+    slv#.solve()
 
 
-if __name__ == "__main__":
-    run()
+
