@@ -16,7 +16,7 @@ import os
 import warnings
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from sympy import Symbol, pi, sin, Number, Eq, And
 
 import modulus.sym
@@ -162,13 +162,13 @@ def run(cfg: ModulusConfig) -> None:
     epoch_losses_df.to_csv("epoch_losses.csv", index=False)
 
     # Plot and save the loss curve
-    plt.figure(figsize=(10, 5))
-    plt.plot(range(1, cfg.train.epochs + 1), epoch_losses)
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.title("Epoch Loss Curve")
-    plt.savefig("epoch_loss_curve.png")
-    plt.show
+    #plt.figure(figsize=(10, 5))
+    #plt.plot(range(1, cfg.train.epochs + 1), epoch_losses)
+    #plt.xlabel("Epoch")
+    #plt.ylabel("Loss")
+   # plt.title("Epoch Loss Curve")
+  #  plt.savefig("epoch_loss_curve.png")
+ #   plt.show
     slv.solve()
 
 
