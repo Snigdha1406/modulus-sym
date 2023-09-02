@@ -136,7 +136,7 @@ def run(cfg: ModulusConfig) -> None:
     numpy_inference = PointwiseInferencer(
         nodes=nodes,
         invar=interior_points,
-        output_names=["ux", "uy"],
+        output_names=["ux", "uy","uz"],
         plotter=InferencerPlotter(),
         batch_size=2048,
     )
