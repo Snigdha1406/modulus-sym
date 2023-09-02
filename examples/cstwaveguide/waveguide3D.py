@@ -36,9 +36,9 @@ x, y, z = Symbol("x"), Symbol("y"), Symbol("z")
 @modulus.sym.main(config_path="conf", config_name="config")
 def run(cfg: ModulusConfig) -> None:
     # params for domain
-    length = 2
-    height = 2
-    width = 2
+    length = 11
+    height = 6.5
+    width = 25
 
     eigenmode = [1]
     wave_number = 16.0  # wave_number = freq/c
