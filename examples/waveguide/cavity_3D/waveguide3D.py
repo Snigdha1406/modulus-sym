@@ -162,19 +162,19 @@ if __name__ == "__main__":
 
 
 
-if __name__ == "__main__":
-    run()
+#if __name__ == "__main__":
+    #run()
 
     # Plot data
-   slv.plot_results()
+  # slv.plot_results()
 
     # Save epochs' loss data to a CSV file
-    loss_data = slv.get_loss_data()  # Assuming there's a method to get loss data
-    with open("epochs_loss.csv", "w") as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(["Epoch", "Loss"])
-        for epoch, loss in enumerate(loss_data):
-            csv_writer.writerow([epoch, loss])
+  #  loss_data = slv.get_loss_data()  # Assuming there's a method to get loss data
+   # with open("epochs_loss.csv", "w") as csvfile:
+       # csv_writer = csv.writer(csvfile)
+      #  csv_writer.writerow(["Epoch", "Loss"])
+      #  for epoch, loss in enumerate(loss_data):
+       #     csv_writer.writerow([epoch, loss])
 
 #if __name__ == "__main__":
  #   run()
