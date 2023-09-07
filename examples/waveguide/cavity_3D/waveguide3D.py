@@ -152,9 +152,10 @@ def run(cfg: ModulusConfig) -> None:
     
     
 if __name__ == "__main__":
+    run()
     # Initialize the ModulusConfig object here
    # cfg = ModulusConfig()
-    run()
+    
 
 
 
