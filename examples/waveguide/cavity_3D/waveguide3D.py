@@ -174,8 +174,8 @@ def run(cfg: ModulusConfig) -> None:
 
 if __name__ == "__main__":
     # Initialize the ModulusConfig object here
-    cfg = ModulusConfig()
-    run(cfg)
+   # cfg = ModulusConfig()
+    run()
 
 
 
