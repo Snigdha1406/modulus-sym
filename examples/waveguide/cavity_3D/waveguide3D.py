@@ -145,33 +145,12 @@ def run(cfg: ModulusConfig) -> None:
     )
     waveguide_domain.add_inferencer(numpy_inference, "Inf" + str(wave_number).zfill(4))
     
-    # Create an empty list to store the loss data during training
-    loss_data = []
+   
 
     # make solver
     slv = Solver(cfg, waveguide_domain)
     
-    # Collect loss data during training
-    def loss_callback(epoch, loss):
-        print(f"Epoch {epoch}: Loss = {loss}")
-        loss_data.append([epoch, loss])
-
-    slv.register_callback("loss", loss_callback)
-    # start solver
-    slv.solve()
-    # Save loss data to a CSV file
-    loss_df = pd.DataFrame(loss_data, columns=["Epoch", "Loss"])
-    loss_df.to_csv("loss_data.csv", index=False)
-
-    # Plot loss data
-    plt.figure()
-    plt.plot(loss_df["Epoch"], loss_df["Loss"])
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.title("Training Loss Over Epochs")
-    plt.savefig("loss_plot.png")
-    plt.show()
-
+    
 if __name__ == "__main__":
     # Initialize the ModulusConfig object here
    # cfg = ModulusConfig()
@@ -183,11 +162,11 @@ if __name__ == "__main__":
 
 
 
-#if __name__ == "__main__":
- #   run()
+if __name__ == "__main__":
+    run()
 
     # Plot data
-#    slv.plot_results()
+   slv.plot_results()
 
     # Save epochs' loss data to a CSV file
     loss_data = slv.get_loss_data()  # Assuming there's a method to get loss data
