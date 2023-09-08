@@ -14,9 +14,6 @@
 
 import os
 import warnings
-#import numpy as np
-#import pandas as pd
-#import matplotlib.pyplot as plt
 from sympy import Symbol, pi, sin, Number, Eq, And
 
 import modulus.sym
@@ -39,9 +36,9 @@ x, y, z = Symbol("x"), Symbol("y"), Symbol("z")
 @modulus.sym.main(config_path="conf", config_name="config")
 def run(cfg: ModulusConfig) -> None:
     # params for domain
-    length = 11
-    height = 6.5
-    width = 25
+    length = 2
+    height = 2
+    width = 2
 
     eigenmode = [1]
     wave_number = 16.0  # wave_number = freq/c
@@ -139,68 +136,18 @@ def run(cfg: ModulusConfig) -> None:
     numpy_inference = PointwiseInferencer(
         nodes=nodes,
         invar=interior_points,
-        output_names=["ux", "uy","uz"],
+        output_names=["ux", "uy", "uz"],
         plotter=InferencerPlotter(),
         batch_size=2048,
     )
     waveguide_domain.add_inferencer(numpy_inference, "Inf" + str(wave_number).zfill(4))
-    
-   
 
     # make solver
     slv = Solver(cfg, waveguide_domain)
-    
-    
+
+    # start solver
+    slv.solve()
+
+
 if __name__ == "__main__":
     run()
-    # Initialize the ModulusConfig object here
-   # cfg = ModulusConfig()
-    
-
-
-
-
-
-
-
-#if __name__ == "__main__":
-    #run()
-
-    # Plot data
-  # slv.plot_results()
-
-    # Save epochs' loss data to a CSV file
-  #  loss_data = slv.get_loss_data()  # Assuming there's a method to get loss data
-   # with open("epochs_loss.csv", "w") as csvfile:
-       # csv_writer = csv.writer(csvfile)
-      #  csv_writer.writerow(["Epoch", "Loss"])
-      #  for epoch, loss in enumerate(loss_data):
-       #     csv_writer.writerow([epoch, loss])
-
-#if __name__ == "__main__":
- #   run()
-    
-    # start solver
-   # epoch_losses = []
-  #  for epoch in range(cfg.train.epochs):
-   #     slv.train()
-    #    loss = slv.eval()
-     #   print(f"Epoch {epoch+1}/{cfg.train.epochs}, Loss: {loss:.4f}")
-      #  epoch_losses.append(loss)
-
-    # Save epoch losses to a CSV file
-    #epoch_losses_df = pd.DataFrame({"Epoch": range(1, cfg.train.epochs + 1), "Loss": epoch_losses})
-    #epoch_losses_df.to_csv("epoch_losses.csv", index=False)
-
-    # Plot and save the loss curve
-    #plt.figure(figsize=(10, 5))
-    #plt.plot(range(1, cfg.train.epochs + 1), epoch_losses)
-    #plt.xlabel("Epoch")
-    #plt.ylabel("Loss")
-   # plt.title("Epoch Loss Curve")
-  #  plt.savefig("epoch_loss_curve.png")
- #   plt.show
-    #slv.solve()
-
-
-
