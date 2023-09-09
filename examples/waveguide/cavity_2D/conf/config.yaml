@@ -23,7 +23,7 @@ defaults :
 
 scheduler:
   decay_rate: 0.95
-  decay_steps: 5000
+  decay_steps: 1000
 
 training:
   rec_results_freq: 5000
@@ -31,6 +31,6 @@ training:
 
 batch_size:
   PEC: 400
-  Waveguide_port: 200
-  ABC: 200
-  Interior: 4000
+  Waveguide_port: 100
+  ABC: 100
+  Interior: 819
