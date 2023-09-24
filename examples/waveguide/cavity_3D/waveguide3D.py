@@ -14,7 +14,7 @@
 
 import os
 import warnings
-from sympy import Symbol, pi, sin, Number, Eq, And
+from sympy import Symbol, pi, sin, Number, Eq, And, exp, I
 
 import modulus.sym
 from modulus.sym.hydra import instantiate_arch, ModulusConfig
@@ -71,27 +71,44 @@ def run(cfg: ModulusConfig) -> None:
 
     waveguide_domain = Domain()
 
-    wall_PEC = PointwiseBoundaryConstraint(
+    k_x = Symbol("k_x")  # Wavevector in the x-direction
+    k_y = Symbol("k_y")  # Wavevector in the y-direction
+
+    Bloch_x = {
+        "ux": Symbol("ux") * exp(I * k_x * x),
+        "uy": Symbol("uy") * exp(I * k_x * x),
+        "uz": Symbol("uz") * exp(I * k_x * x),
+    }
+
+    Bloch_y = {
+        "ux": Symbol("ux") * exp(I * k_y * y),
+        "uy": Symbol("uy") * exp(I * k_y * y),
+        "uz": Symbol("uz") * exp(I * k_y * y),
+    }
+
+    # Bloch boundary condition for the x-direction
+    Bloch_x_constraint = PointwiseBoundaryConstraint(
         nodes=nodes,
         geometry=rec,
-        outvar={"PEC_x": 0.0, "PEC_y": 0.0, "PEC_z": 0.0},
-        batch_size=cfg.batch_size.PEC,
-        lambda_weighting={"PEC_x": 100.0, "PEC_y": 100.0, "PEC_z": 100.0},
+        outvar=Bloch_x,
+        batch_size=cfg.batch_size.Bloch_x,
+        lambda_weighting={"ux": 100.0, "uy": 100.0, "uz": 100.0},
         criteria=And(~Eq(x, 0), ~Eq(x, width)),
     )
+    waveguide_domain.add_constraint(Bloch_x_constraint, "Bloch_x")
 
-    waveguide_domain.add_constraint(wall_PEC, "PEC")
-
-    Waveguide_port = PointwiseBoundaryConstraint(
+    # Bloch boundary condition for the y-direction
+    Bloch_y_constraint = PointwiseBoundaryConstraint(
         nodes=nodes,
         geometry=rec,
-        outvar={"uz": waveguide_port},
-        batch_size=cfg.batch_size.Waveguide_port,
-        lambda_weighting={"uz": 100.0},
-        criteria=Eq(x, 0),
+        outvar=Bloch_y,
+        batch_size=cfg.batch_size.Bloch_y,
+        lambda_weighting={"ux": 100.0, "uy": 100.0, "uz": 100.0},
+        criteria=And(~Eq(y, 0), ~Eq(y, length)),
     )
-    waveguide_domain.add_constraint(Waveguide_port, "Waveguide_port")
+    waveguide_domain.add_constraint(Bloch_y_constraint, "Bloch_y")
 
+    # Open boundary condition for the z-direction
     ABC = PointwiseBoundaryConstraint(
         nodes=nodes,
         geometry=rec,
@@ -151,3 +168,4 @@ def run(cfg: ModulusConfig) -> None:
 
 if __name__ == "__main__":
     run()
+
