@@ -32,5 +32,8 @@ training:
 batch_size:
   PEC: 1024
   Waveguide_port: 256
+  Bloch_x: 256
+  Bloch_y: 256
+  Bloch_z: 256
   ABC: 256
   Interior: 1000
