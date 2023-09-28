@@ -29,14 +29,12 @@ from modulus.sym.domain.inferencer import PointwiseInferencer
 from modulus.sym.utils.io.plotter import InferencerPlotter
 from modulus.sym.key import Key
 from modulus.sym.eq.pdes.electromagnetic import PEC, SommerfeldBC, MaxwellFreqReal
-#from modulus.eq.boundary_conditions import BlochBoundaryCondition, RadiantBoundaryCondition
-
 
 x, y, z = Symbol("x"), Symbol("y"), Symbol("z")
 
-
-@modulus.main(config_path="conf", config_name="config")
+@modulus.sym.main(config_path="conf", config_name="config")
 def run(cfg: ModulusConfig) -> None:
+    # params for domain
     components = {
         "Glass1": {
             "box": Box(point_1=(0, -1, -1), point_2=(5, 1, 1)),  # point_1=(0, -1, -1), point_2= (5, 1, 1)
