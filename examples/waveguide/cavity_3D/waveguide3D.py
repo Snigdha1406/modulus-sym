@@ -70,7 +70,6 @@ def run(cfg: ModulusConfig) -> None:
     )
 
     waveguide_domain = Domain()
-
     k_x = Symbol("k_x")  # Wavevector in the x-direction
     k_y = Symbol("k_y")  # Wavevector in the y-direction
 
@@ -109,6 +108,7 @@ def run(cfg: ModulusConfig) -> None:
     waveguide_domain.add_constraint(Bloch_y_constraint, "Bloch_y")
 
     # Open boundary condition for the z-direction
+
     ABC = PointwiseBoundaryConstraint(
         nodes=nodes,
         geometry=rec,
