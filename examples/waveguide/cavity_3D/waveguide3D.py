@@ -14,7 +14,7 @@
 
 import os
 import warnings
-from sympy import Symbol, pi, sin, Number, Eq, And
+from sympy import Symbol, pi, sin, Number, Eq, And, exp, I
 
 import modulus.sym
 from modulus.sym.hydra import instantiate_arch, ModulusConfig
@@ -32,169 +32,138 @@ from modulus.sym.eq.pdes.electromagnetic import PEC, SommerfeldBC, MaxwellFreqRe
 
 x, y, z = Symbol("x"), Symbol("y"), Symbol("z")
 
+
 @modulus.sym.main(config_path="conf", config_name="config")
 def run(cfg: ModulusConfig) -> None:
     # params for domain
-    components = {
-        "Glass1": {
-            "box": Box(point_1=(0, -1, -1), point_2=(5, 1, 1)),  # point_1=(0, -1, -1), point_2= (5, 1, 1)
-            "permittivity": 0.375,
-            "permeability": 1,
-        },
-        "Dielectric": {
-            "box": Box(point_1=(-0.5, -0.9, -0.5), point_2=(0.5, 0.9, 0.5)),
-            "permittivity": 85,
-            "permeability": 1,
-        },
-        "Glass2": {
-            "box": Box(point_1=(-5, -1, -1),point_2= (0, 1, 1)),
-            "permittivity": 0.375,
-            "permeability": 1,
-        },
-        "Air": {
-            "box": Box(point_1=(-0.5, -1, -1),point_2=(10, 1, 1)),
-            "permittivity": 1,
-            "permeability": 1,
-        },
+    length = 2
+    height = 2
+    width = 2
+
+    eigenmode = [1]
+    wave_number = 16.0  # wave_number = freq/c
+    waveguide_port = Number(0)
+    for k in eigenmode:
+        waveguide_port += sin(k * pi * y / length) * sin(k * pi * z / height)
+
+    # define geometry
+    rec = Box((0, 0, 0), (width, length, height))
+    # make list of nodes to unroll graph on
+    hm = MaxwellFreqReal(k=wave_number)
+    pec = PEC()
+    pml = SommerfeldBC()
+    wave_net = instantiate_arch(
+        input_keys=[Key("x"), Key("y"), Key("z")],
+        output_keys=[Key("ux"), Key("uy"), Key("uz")],
+        frequencies=("axis,diagonal", [i / 2.0 for i in range(int(wave_number) + 1)]),
+        frequencies_params=(
+            "axis,diagonal",
+            [i / 2.0 for i in range(int(wave_number) + 1)],
+        ),
+        cfg=cfg.arch.modified_fourier,
+    )
+    nodes = (
+        hm.make_nodes()
+        + pec.make_nodes()
+        + pml.make_nodes()
+        + [wave_net.make_node(name="wave_network")]
+    )
+
+    waveguide_domain = Domain()
+
+    k_x = Symbol("k_x")  # Wavevector in the x-direction
+    k_y = Symbol("k_y")  # Wavevector in the y-direction
+
+    Bloch_x = {
+        "ux": Symbol("ux") * exp(I * k_x * x),
+        "uy": Symbol("uy") * exp(I * k_x * x),
+        "uz": Symbol("uz") * exp(I * k_x * x),
     }
 
-    # Define the domain and add the components
-    domain = Domain()
-    for name, props in components.items():
-        domain.add_component(
-            name, props["box"], props["permittivity"], props["permeability"]
-        )
+    Bloch_y = {
+        "ux": Symbol("ux") * exp(I * k_y * y),
+        "uy": Symbol("uy") * exp(I * k_y * y),
+        "uz": Symbol("uz") * exp(I * k_y * y),
+    }
 
-    # Define the boundary and interior constraints
-    boundary_constraints = [
-                               PointwiseBoundaryConstraint(
-                                   Key("ElectricField", x, y, z, direction=dir),
-                                   0,
-                                   domain.get_boundary(name, dir),
-                               )
-                               for name in components.keys()
-                               for dir in ["x_min", "x_max", "y_min", "y_max"]
-                           ] + [
-                               BlochBoundary(
-                                   Key("ElectricField", x, y, z),
-                                   Number(-pi / 4),
-                                   domain.get_boundary("Air", "z_min"),
-                               ),
-                               BlochBoundary(
-                                   Key("ElectricField", x, y, z),
-                                   Number(pi / 4),
-                                   domain.get_boundary("Air", "z_max"),
-                               ),
-                           ]
-    interior_constraints = [
-        PointwiseInteriorConstraint(
-            Key("ElectricField", x, y, z),
-            0,
-            domain.get_interior(name),
-        )
-        for name in components.keys()
-    ]
+    # Bloch boundary condition for the x-direction
+    Bloch_x_constraint = PointwiseBoundaryConstraint(
+        nodes=nodes,
+        geometry=rec,
+        outvar=Bloch_x,
+        batch_size=cfg.batch_size.Bloch_x,
+        lambda_weighting={"ux": 100.0, "uy": 100.0, "uz": 100.0},
+        criteria=And(~Eq(x, 0), ~Eq(x, width)),
+    )
+    waveguide_domain.add_constraint(Bloch_x_constraint, "Bloch_x")
 
-    # Define the PDE system
-    pde_system = []
-    for name in components.keys():
-        pde_system.append(
-            MaxwellFreqReal(
-                Key("ElectricField", x, y, z, component=name),
-                Key("MagneticField", x, y, z, component=name),
-                domain.get_permittivity(name),
-                domain.get_permeability(name),
-            )
-        )
-        # Apply Bloch boundary conditions for Xmin, Xmax, Ymin, Ymax
-        for dir in ["x_min", "x_max", "y_min", "y_max"]:
-            pde_system.append(
-                PointwiseBoundaryConstraint(
-                    Key("ElectricField", x, y, z, direction=dir),
-                    Key("ElectricField", x, y, z, direction=dir, shift=(1, 0, 0)),
-                    domain.get_boundary(name, dir),
-                )
-            )
-            pde_system.append(
-                PointwiseBoundaryConstraint(
-                    Key("ElectricField", x, y, z, direction=dir),
-                    Key("ElectricField", x, y, z, direction=dir, shift=(0, 1, 0)),
-                    domain.get_boundary(name, dir),
-                )
-            )
-        # Apply Radiant boundary conditions for zmin and zmax
-        for dir in ["z_min", "z_max"]:
-            pde_system.append(
-                PointwiseBoundaryConstraint(
-                    Key("ElectricField", x, y, z, direction=dir),
-                    0,
-                    domain.get_boundary(name, dir),
-                )
-            )
-        pde_system.append(
-            PEC(
-                Key("ElectricField", x, y, z, component=name),
-                domain.get_boundary(name),
-            )
-        )
-        pde_system.append(
-            SommerfeldBC(
-                Key("ElectricField", x, y, z, component=name),
-                Key("MagneticField", x, y, z, component=name),
-                domain.get_boundary(name, "z_max"),
-            )
-        )
-    # Define the solver and solve the problem
-    solver = Solver(domain, pde_system)
-    solver.solve()
+    # Bloch boundary condition for the y-direction
+    Bloch_y_constraint = PointwiseBoundaryConstraint(
+        nodes=nodes,
+        geometry=rec,
+        outvar=Bloch_y,
+        batch_size=cfg.batch_size.Bloch_y,
+        lambda_weighting={"ux": 100.0, "uy": 100.0, "uz": 100.0},
+        criteria=And(~Eq(y, 0), ~Eq(y, length)),
+    )
+    waveguide_domain.add_constraint(Bloch_y_constraint, "Bloch_y")
 
-    # Define the inferencer and plot the results
-    inferencer = PointwiseInferencer(domain)
-    plotter = InferencerPlotter(inferencer)
-    plotter.plot(Key("ElectricField", x, y, z))
-    plotter.plot(Key("MagneticField", x, y, z))
+    # Open boundary condition for the z-direction
+    ABC = PointwiseBoundaryConstraint(
+        nodes=nodes,
+        geometry=rec,
+        outvar={
+            "SommerfeldBC_real_x": 0.0,
+            "SommerfeldBC_real_y": 0.0,
+            "SommerfeldBC_real_z": 0.0,
+        },
+        batch_size=cfg.batch_size.ABC,
+        lambda_weighting={
+            "SommerfeldBC_real_x": 10.0,
+            "SommerfeldBC_real_y": 10.0,
+            "SommerfeldBC_real_z": 10.0,
+        },
+        criteria=Eq(x, width),
+    )
+    waveguide_domain.add_constraint(ABC, "ABC")
 
-    # Define numpy inferencer with interior points
-    interior_points = domain.sample_interior(
+    Interior = PointwiseInteriorConstraint(
+        nodes=nodes,
+        geometry=rec,
+        outvar={
+            "Maxwell_Freq_real_x": 0,
+            "Maxwell_Freq_real_y": 0.0,
+            "Maxwell_Freq_real_z": 0.0,
+        },
+        batch_size=cfg.batch_size.Interior,
+        bounds={x: (0, width), y: (0, length), z: (0, height)},
+        lambda_weighting={
+            "Maxwell_Freq_real_x": 1.0 / wave_number**2,
+            "Maxwell_Freq_real_y": 1.0 / wave_number**2,
+            "Maxwell_Freq_real_z": 1.0 / wave_number**2,
+        },
+        fixed_dataset=False,
+    )
+    waveguide_domain.add_constraint(Interior, "Interior")
+
+    # add inferencer data
+    interior_points = rec.sample_interior(
         10000, bounds={x: (0, width), y: (0, length), z: (0, height)}
     )
     numpy_inference = PointwiseInferencer(
-        domain=domain,
+        nodes=nodes,
         invar=interior_points,
-        output_names=["ElectricField", "MagneticField"],
+        output_names=["ux", "uy", "uz"],
         plotter=InferencerPlotter(),
         batch_size=2048,
     )
+    waveguide_domain.add_inferencer(numpy_inference, "Inf" + str(wave_number).zfill(4))
 
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from modulus.eq.pdes.electromagnetic import SParameter
+    # make solver
+    slv = Solver(cfg, waveguide_domain)
 
-    # Define the frequency range
-    freq_range = np.linspace(10e12, 20e12, num=100)
-
-    # Calculate S-parameters at different frequencies
-    s_params = []
-    for freq in freq_range:
-        s_params.append(
-            SParameter(
-                domain, pde_system, freq, ["x_min", "x_max", "y_min", "y_max", "z_min", "z_max"]
-            ).solve()
-        )
-
-    # Extract transmission from the S-parameters
-    transmission = []
-    for s_param in s_params:
-        s11, s21, s12, s22 = s_param
-        transmission.append(np.abs(s21) ** 2 / (1 - np.abs(s11) ** 2))
-
-    # Plot transmission vs frequency
-    fig, ax = plt.subplots()
-    ax.plot(freq_range / 1e12, transmission)
-    ax.set_xlabel("Frequency (THz)")
-    ax.set_ylabel("Transmission (magnitude)")
-    ax.set_title("Transmission vs Frequency")
-    plt.show()
+    # start solver
+    slv.solve()
 
 
 if __name__ == "__main__":
